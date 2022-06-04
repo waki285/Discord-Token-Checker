@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 if (require("electron-squirrel-startup")) {
   app.quit();
@@ -35,3 +35,5 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+ipcMain.handle("")
