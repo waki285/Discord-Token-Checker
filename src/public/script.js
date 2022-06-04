@@ -22,5 +22,9 @@ $("#loadtoken").on("change", async (e) => {
   e.preventDefault();
   /** @type {File} */
   const file = $("#loadtoken").prop("files")[0];
-  file.
+  if (!file.name.endsWith(".txt")) return toastr.error("Invalid file type");
+  const filen = await file.text();
+  const tokens = filen.split("\n");
+  toastr.success(`Loaded ${tokens.length} tokens.\nChecking...`);
+  
 })
