@@ -55,7 +55,7 @@
     "chalk": "^4.1.2",
     "electron-squirrel-startup": "^1.0.0",
     "jquery": "^3.6.0",
-    "p-limit": "^4.0.0",
+    "p-limit": "^3.1.0",
     "toastr": "^2.1.4",
     "ws": "^8.7.0"
   },

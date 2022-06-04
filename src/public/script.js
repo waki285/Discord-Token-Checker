@@ -1,4 +1,4 @@
-/** @type { { checkTokens(tokens: string[]): Promise<any> } } */
+/** @type { { checkTokens(tokens: string[]): Promise<{ success: number, require: number, invalid: number }>, checkTokensChunk(callback: <T,>(data: string) => Awaited<T>) => void } } */
 var preload = window.preload;
 
 toastr.options = {
@@ -28,4 +28,12 @@ $("#loadtoken").on("change", async (e) => {
   const tokens = filen.split("\n");
   toastr.success(`Loaded ${tokens.length} tokens.\nChecking...`);
   const result = await preload.checkTokens(tokens);
+  toastr.info(`Checked: ${tokens.length}`, "", { timeOut: 200000 });
+  toastr.success(`Success: ${result.success}`, "", { timeOut: 200000 });
+  toastr.error(`Invalid: ${result.invalid}`, "", { timeOut: 200000 });
+  toastr.warning(`Require: ${result.require}`, "", { timeOut: 200000 });
+});
+
+preload.checkTokensChunk((event, data) => {
+  $("title").text(data.title);
 })

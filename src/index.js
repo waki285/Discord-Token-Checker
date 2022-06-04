@@ -3,7 +3,7 @@ const path = require("path");
 const retry = require("async-retry");
 const ws = require("ws");
 const fs = require("fs");
-const pLimit = require("p-limit").default;
+const pLimit = require("p-limit");
 const chalk = require("chalk");
 if (require("electron-squirrel-startup")) {
   app.quit();
@@ -16,13 +16,24 @@ const config = {
 
 const limit = pLimit(config.threads);
 
+const TITLED = "Discord Token Checker - Checker By @L2 & GUI By @suzuneu_discord";
+let outputFolder = `./Results/${new Date()
+  .toLocaleString()
+  .replace(/\//g, "-")
+  .replace(/:/g, ".")}`;
+try {
+  fs.mkdirSync("Results");
+} catch {};
+try {
+  fs.mkdirSync(outputFolder);
+} catch {};
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     autoHideMenuBar: true,
-    title: "Discord Token Checker - Checker By @L2 & GUI By @suzuneu_discord",
+    title: TITLED,
     webPreferences: {
       devTools: true, 
       contextIsolation: true, 
@@ -94,7 +105,7 @@ const check = async (token) => {
             console.log(` [${chalk.red("INVALID")}] ${chalk.red(token)}`);
             if (!("INVALID" in outputs)) {
               outputs["INVALID"] = fs.createWriteStream(
-                `${output_folder}/INVALID.txt`
+                `${outputFolder}/INVALID.txt`
               );
             }
             outputs.INVALID.write(`${token}\n`);
@@ -116,7 +127,7 @@ const check = async (token) => {
               if (!(response.d.required_action.split("_").at(-1) in outputs)) {
                 outputs[response.d.required_action.split("_").at(-1)] =
                   fs.createWriteStream(
-                    `${output_folder}/${response.d.required_action
+                    `${outputFolder}/${response.d.required_action
                       .split("_")
                       .at(-1)}.txt`
                   );
@@ -131,7 +142,7 @@ const check = async (token) => {
               WebSocket.close();
               if (!("SUCCESS" in outputs)) {
                 outputs["SUCCESS"] = fs.createWriteStream(
-                  `${output_folder}/SUCCESS.txt`
+                  `${outputFolder}/SUCCESS.txt`
                 );
               }
               outputs.SUCCESS.write(`${token}\n`);
@@ -151,8 +162,60 @@ const check = async (token) => {
   });
 };
 
-ipcMain.handle("check-tokens", async (event, tokens) => {
+const cpmCalc = async () => {
+  let old_ = 0;
+  let new_ = 0;
+  (async () => {
+    while (true) {
+      old_ = counter.checked;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      new_ = counter.checked;
+      counter.cpm = (new_ - old_) * 60;
+      if (counter.flag) {
+        break;
+      }
+    }
+  })();
+};
+
+ipcMain.handle("check-tokens", 
+/**
+ * @param {string[]} tokens
+ */
+async (event, tokens) => {
+  cpmCalc();
+  event.sender.send("start-check", { title:  `${TITLED} | Checked: 0 (0.00%) - Left: ${tokens.length} - Invalid: 0 (NaN) - Success: 0 (NaN) - Require: 0 (NaN) - Error: (0) | CPM: 0` });
   await Promise.all(
-    
+    tokens.map(x => {
+      return limit(() => check(x)).then(() => {
+        counter.checked++;
+        event.sender.send("check-chunk", { title: `${TITLED} | Checked: ${counter.checked.toLocaleString()} (${(
+          (counter.checked / tokens.length) *
+          100
+        ).toFixed(2)}%) - Left: ${(
+          tokens.length - counter.checked
+        ).toLocaleString()} - Invalid: ${counter.invalid.toLocaleString()} (${(
+          (counter.invalid / counter.checked) *
+          100
+        ).toFixed(
+          2
+        )}%) - Success: ${counter.success.toLocaleString()} (${(
+          (counter.success / counter.checked) *
+          100
+        ).toFixed(
+          2
+        )}%) - Require: ${counter.require.toLocaleString()} (${(
+          (counter.require / counter.checked) *
+          100
+        ).toFixed(2)}%) - Error: (${counter.error}) | CPM: ${
+          counter.cpm
+        }`})
+      })
+    })
   )
+  counter.flag = true;
+  Object.keys(outputs).forEach(async (key) => {
+    await outputs[key].end();
+  });
+  return { success: counter.success, invalid: counter.invalid, require: counter.require };
 });
