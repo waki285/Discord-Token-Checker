@@ -18,7 +18,9 @@ label > input { /* HIDE RADIO */
 label {
   background-color: darkseagreen;
   color: black;
-  display: inline-block;
+  display: block;
   cursor: pointer;
   padding: 10px 20px;
+  text-align: center;
 }
+
