@@ -185,7 +185,7 @@ ipcMain.handle("check-tokens",
 async (event, tokens) => {
   cpmCalc();
   event.sender.send("start-check", { title:  `${TITLED} | Checked: 0 (0.00%) - Left: ${tokens.length} - Invalid: 0 (NaN) - Success: 0 (NaN) - Require: 0 (NaN) - Error: (0) | CPM: 0` });
-  await Promise.all(
+  await Promise.allSettled(
     tokens.map(x => {
       return limit(() => check(x)).then(() => {
         counter.checked++;
@@ -217,5 +217,23 @@ async (event, tokens) => {
   Object.keys(outputs).forEach(async (key) => {
     await outputs[key].end();
   });
-  return { success: counter.success, invalid: counter.invalid, require: counter.require };
+  return { success: counter.success, invalid: counter.invalid, require: counter.require, title: `${TITLED} | Checked: ${counter.checked.toLocaleString()} (${(
+    (counter.checked / tokens.length) *
+    100
+  ).toFixed(2)}%) - Left: ${(
+    tokens.length - counter.checked
+  ).toLocaleString()} - Invalid: ${counter.invalid.toLocaleString()} (${(
+    (counter.invalid / counter.checked) *
+    100
+    ).toFixed(
+      2
+    )}%) - Success: ${counter.success.toLocaleString()} (${(
+      (counter.success / counter.checked) *
+      100
+    ).toFixed(
+      2
+    )}%) - Require: ${counter.require.toLocaleString()} (${(
+      (counter.require / counter.checked) *
+      100
+    ).toFixed(2)}%) - Error: (${counter.error})}` };
 });
