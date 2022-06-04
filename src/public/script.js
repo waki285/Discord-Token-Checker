@@ -1,3 +1,4 @@
+/** @type { { checkTokens(tokens: string[]): Promise<any> } } */
 var preload = window.preload;
 
 toastr.options = {
@@ -26,5 +27,5 @@ $("#loadtoken").on("change", async (e) => {
   const filen = await file.text();
   const tokens = filen.split("\n");
   toastr.success(`Loaded ${tokens.length} tokens.\nChecking...`);
-  
+  const result = await preload.checkTokens(tokens);
 })
